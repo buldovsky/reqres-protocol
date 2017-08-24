@@ -1,7 +1,7 @@
 {
-  "name": "jquery-protocol",
+  "name": "reqres-protocol",
   "version": "1.0.0",
-  "description": "jQuery protocol plugin",
+  "description": "Reqres framework protocols",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,13 +11,14 @@
     "url": "git+https://github.com/buldovsky/jquery-protocol.git"
   },
   "keywords": [
-    "jQuery",
+    "Reqres", 
+    "framework",
     "javascript"
   ],
   "author": "Max Buldovsky",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/buldovsky/jquery-protocol/issues"
+    "url": "https://github.com/buldovsky/reqres-protocol/issues"
   },
-  "homepage": "https://github.com/buldovsky/jquery-protocol#readme"
+  "homepage": "https://github.com/buldovsky/reqres-protocol#readme"
 }
