@@ -1,6 +1,6 @@
 {
   "name": "@reqres/protocol",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Reqres framework protocols",
   "main": "main.js",
   "scripts": {

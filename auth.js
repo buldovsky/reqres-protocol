@@ -3,6 +3,16 @@
  * Прописываем протокол авторизации
  * 
  */
+(function( factory ) {
+    if ( typeof define === "function" && define.amd ) {
+        // AMD. Register as an anonymous module.
+        define([ "jquery" ], factory );
+    } else {
+        // Browser globals
+        factory( jQuery );
+    }
+}(function( $ ) {
+
 $(document).on('protocolAuth', function(e, context, response, status, jqXHR){    
     
 
@@ -48,3 +58,5 @@ $(document).on('protocolAuth', function(e, context, response, status, jqXHR){
     }
 
 })
+
+}));

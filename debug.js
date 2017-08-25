@@ -3,6 +3,18 @@
  * Прописываем протокол обработки Reqres JS форм (reqres-classes/form)
  * 
  */
+
+(function( factory ) {
+    if ( typeof define === "function" && define.amd ) {
+        // AMD. Register as an anonymous module.
+        define([ "jquery" ], factory );
+    } else {
+        // Browser globals
+        factory( jQuery );
+    }
+}(function( $ ) {
+
+
 $(document).on('protocolDebug', function(e, context, data, status, jqXHR){    
 
     alert(data.text)
@@ -10,3 +22,6 @@ $(document).on('protocolDebug', function(e, context, data, status, jqXHR){
     console.log(arguments)
 
 })
+
+
+}));
