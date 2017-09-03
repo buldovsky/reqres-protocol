@@ -6,10 +6,18 @@
  *
  * 
  */
-define(['angular-smart-bootstrap', 'reqres-classes/modal', 'reqres-classes/field', 'reqres-classes/list', 'reqres-fields/field-phone'], 
-    function(app, ModalClass, FieldClass, ListClass){
+(function( factory ) {
 
-    
+    if ( typeof define === "function" && define.amd ) {
+        // AMD. Register as an anonymous module.
+        define([ "jquery", 'reqres-classes/modal', 'reqres-classes/field', 'reqres-classes/list', 'reqres-classes/form' ], factory );
+    } else {
+        // Browser globals
+        factory( jQuery );
+    }
+
+}(function(ModalClass, FieldClass, ListClass, FormClass){
+
     /**
      *
      * создается модальное окно
@@ -57,7 +65,7 @@ define(['angular-smart-bootstrap', 'reqres-classes/modal', 'reqres-classes/field
         Modal.get().attr('ng-controller', controllerId)
 
         // добавляем контроллер
-        app(false).controller(controllerId, ['$scope', 'commonFactory', '$timeout', 
+        angular.Module(false).controller(controllerId, ['$scope', 'commonFactory', '$timeout', 
         function($scope, commonFactory, $timeout) {
 
             // сохраняем $scope, чтобы потом обновлять его
@@ -120,11 +128,10 @@ define(['angular-smart-bootstrap', 'reqres-classes/modal', 'reqres-classes/field
             $scope.Modal = Modal
 
                 
-        // обновляем все директивы компилируем код
         }]) 
         
-        app(Modal.get().get(0))
-
+        // обновляем все директивы компилируем код
+        angular.Module(Modal.get().get(0))        
 		
         return [context, data, status, jqXHR, Modal, true]
         
@@ -139,8 +146,7 @@ define(['angular-smart-bootstrap', 'reqres-classes/modal', 'reqres-classes/field
 
         // в контексте всегда должен быть скоуп
         // если мы через модалку заходим сюда он там появляется, если через готовый контроллер там его нужно прописать
-
-        
+        // находим и проверяем скоуп
         if('$$watchers' in context) var $scope = context
         else {
             
@@ -387,83 +393,81 @@ define(['angular-smart-bootstrap', 'reqres-classes/modal', 'reqres-classes/field
         // внутри require мы передадим в это обещение данные                
         //var returnRes = $.Deferred()
 
-        require(['reqres-classes/form', 'reqres-classes/list'], function(formClass, ListClass){
 
+        
+        // смотрим данные для инициации формы
+        var forminit = data.jsFormObject || {};
+
+        var $form = $('form', element.get())
+
+        
+        
+        FormClass.around($form, 'init', forminit).detect(function(){
+
+            var Form = this
             
-            // смотрим данные для инициации формы
-            var forminit = data.jsFormObject || {};
-
-            var $form = $('form', element.get())
-
+            def.resolveWith(context, [Form, Modal])
             
-            
-            formClass.around($form, 'init', forminit).detect(function(){
+            // сохраняем стартовые значения формы
+            Form.startdata = formdata
 
-                var Form = this
+            // сохраняем тот факт, что форма вызвана из объекта (списка)
+            if(context instanceof ListClass) {
                 
-                def.resolveWith(context, [Form, Modal])
-                
-                // сохраняем стартовые значения формы
-                Form.startdata = formdata
-
-                // сохраняем тот факт, что форма вызвана из объекта (списка)
-                if(context instanceof ListClass) {
+                // для этой формы добавляем обработчик
+                Form.submit(function(ajax){
                     
-                    // для этой формы добавляем обработчик
-                    Form.submit(function(ajax){
-                        
-                        return ajax.on('protocolFormSuccess', function(e, Form, formresult){
+                    return ajax.on('protocolFormSuccess', function(e, Form, formresult){
 
-                            // при обновлении списка назначаем событие 1 раз
-                            if('last_index' in formresult) context.refresh(function(){
-                                
-	                            // устанавливаем курсор на позиции обязательно переводим в строку
-                                context.active( formresult.last_index.toString() ).scroll()
-                                
-                            }, true)
+                        // при обновлении списка назначаем событие 1 раз
+                        if('last_index' in formresult) context.refresh(function(){
+                            
+                            // устанавливаем курсор на позиции обязательно переводим в строку
+                            context.active( formresult.last_index.toString() ).scroll()
+                            
+                        }, true)
 
-                        })
                     })
-                    
-                }
-
-                // сохраняем скоуп в контекст чтобы потом его менять
-                context.$scope = $scope
-                // прописываем все пришеджие переменные в scope
-                $.each(data.$data, function(key, value){ $scope[key] = value; })
-
-                // форму тоже прописываем
-                $scope.Form = Form
-
-                var list
-                // иногда может быть указан обработчик формы
-                if(!data.$data.require) list = null
-                else list = (typeof data.$data.require == 'string') ? [ data.$data.require ] : data.$data.require;
-                // загружаем список js модулей
-                require(list, function(){
-                    // выполняем каждый из них
-                    angular.forEach(arguments, function(handler, key){
-                        handler.call(Form, formdata, Modal, data.$js, $scope)
-                    })
-                    // после обработчика, заполняем форму данными
-                    Form.values(formdata)
-
-                    var focusField
-                    // усли указано на каком окне фокусироваться
-                    if(data.$js) if(data.$js.focusField) focusField = data.$js.focusField
-
-                    if('activeField' in context) { focusField = context.activeField; }
-
-                    if(focusField) Form.detect(focusField, function(Field){ if(!Field) return; Field.focus() })
-
-                    // передаем переменные в обработчик протокола
-                    //returnRes.resolveWith(context, [newmodal, Form])                                  
-
                 })
+                
+            }
+
+            // сохраняем скоуп в контекст чтобы потом его менять
+            context.$scope = $scope
+            // прописываем все пришеджие переменные в scope
+            $.each(data.$data, function(key, value){ $scope[key] = value; })
+
+            // форму тоже прописываем
+            $scope.Form = Form
+
+            var list
+            // иногда может быть указан обработчик формы
+            if(!data.$data.require) list = null
+            else list = (typeof data.$data.require == 'string') ? [ data.$data.require ] : data.$data.require;
+            // загружаем список js модулей
+            require(list, function(){
+                // выполняем каждый из них
+                angular.forEach(arguments, function(handler, key){
+                    handler.call(Form, formdata, Modal, data.$js, $scope)
+                })
+                // после обработчика, заполняем форму данными
+                Form.values(formdata)
+
+                var focusField
+                // усли указано на каком окне фокусироваться
+                if(data.$js) if(data.$js.focusField) focusField = data.$js.focusField
+
+                if('activeField' in context) { focusField = context.activeField; }
+
+                if(focusField) Form.detect(focusField, function(Field){ if(!Field) return; Field.focus() })
+
+                // передаем переменные в обработчик протокола
+                //returnRes.resolveWith(context, [newmodal, Form])                                  
 
             })
 
         })
+
 
         return def
         // возвращаем данные чтобы можно было при вызове протокола 
@@ -487,232 +491,7 @@ define(['angular-smart-bootstrap', 'reqres-classes/modal', 'reqres-classes/field
         context.$scope.$apply()
         
         
-        
-    /**
-     *
-     * инициализируются классы
-     *
-     */
-    }).on('protocolObjectList55', function(e, context, data, status, jqXHR, template){
-
-
-
-                            // возвращая те или иные параметры, мы сможем их использовать в обработчике протокола
-                            var returnRes
-
-
-
-                            // добавляем контроллер
-                            app.controller(controllerId, ['$scope', 'commonFactory', '$rootScope', '$templateCache'].concat([ 
-                                function($scope, commonFactory, $rootScope, $templateCache) {
-
-
-                                    // обновляем все директивы компилируем код
-                                }]))        
-                            /*
-                            if(!template){
-
-                                // если от нашего элемента уже был вызван протокол объекта,
-                                // значит модалка уже создана и нам остается только обновить данные
-                                if(context.$scope){
-
-                                    // обновляем данные                
-                                    // переносим все данные в scope
-                                    $.each(data.$data, function(i, value){ context.$scope[i] = value })
-                                    // обновляем скоуп
-                                    context.$scope.$apply()
-
-                                }
-
-                            } else {
-
-                                // создаем уникальную строку
-                                var controllerId = 'objectProtocol' + (count++) + 'Ctrl'
-
-                                if(status == 'modal'){
-
-
-
-                                }
-
-                            }
-                            */      
-                            //switch(status){
-
-                                //case 'list': 
-
-                                //var controllerId = 'objectProtocol' + (count++) + 'Ctrl'
-
-
-                                    if(context.$scope){
-
-                                        $.each(context.$scope.objects, function(oid, object){
-
-                                            // если выбран элемент, то скролим на него
-                                            if(object.ind()) object.activate()
-
-                                        })
-
-                                        return
-                                    }
-
-                                    // поскольку у нас ниже стоит require
-                                    // как результат протокола вернется обещание
-                                    // внутри require мы передадим в это обещение данные                
-                                    returnRes = $.Deferred()
-
-                                    // здесь будут названия классов объектов
-                                    var object_classes = []
-                                    // допускается что может быть несколько объектов
-                                    // добавляем название класса в объект подгрузки
-                                    $.each(data.$objects, function(oid, object_data){ object_classes.push(object_data.objectclass || 'reqres-classes/object'); })
-
-                                    object_classes.push('reqres-fields/field-phone')
-                                    var i = 0
-                                    require(object_classes, function(){
-
-                                        var args = arguments
-
-                                        /*
-                                        var newmodal = new ModalClass(context, template)
-
-                                        newmodal
-                                            // при обновлении модалки заново выполняем запрос из протокола
-                                            //.refresh(function(){ $.ajax(jqXHR.requestOptions) })
-                                            // при закрытии модалки удаляем информацию из context
-                                            .hide(function(){ delete context.$scope; })
-                                            // указываем контроллер
-                                            .get().attr('ng-controller', controllerId)
-                                        */
-
-                                        var object, objects = {}, i = 0
-
-                                        // допускается что может быть несколько объектов
-                                        $.each(data.$objects, function(oid, object_data){
-
-                                            var objectClass = args[i++]
-                                            // создаем класс объекта используя те данные, что пришли
-                                            // сохраняем все объекты в один массив
-                                            object = objects[oid] = new objectClass(newmodal.get(), object_data)
-
-                                        })
-
-                                        // передаем переменные в обработчик протокола
-                                        returnRes.resolveWith(context, [newmodal, object])
-
-                    // добавляем контроллер
-                    angularModule.controller(controllerId, ['$scope', 'commonFactory', '$rootScope', '$templateCache'].concat([ 
-                        function($scope, commonFactory, $rootScope, $templateCache) {
-
-                                                                // прописывем функцию поиска
-                                                                $scope.mySearchHandler = function(value, index, array){
-
-                                                                    if(!$scope.search) return true
-                                                                    // прописываем функцию поиска
-                                                                    var check = function(val){ if(val.match(new RegExp($scope.search, "i"))) throw true; }
-                                                                    try {
-
-                                                                        $.each(value, function(key, val){
-
-                                                                            // не ищем в системных значениях
-                                                                            if(key[0] == '_') return
-                                                                            // сравниваем строки
-                                                                            switch(typeof val){
-                                                                                case "string": check(val); break
-                                                                                case "object": 
-                                                                                if(!val) return
-                                                                                if('_text' in val) check(val._text)
-                                                                                $.each(val, function(k, v){
-                                                                                    if(k[0] !== '_' && typeof v == "string") check(v)
-                                                                                        })
-                                                                                break
-                                                                            }
-                                                                        })
-
-                                                                    } catch(res){ return true }
-
-                                                                    return false
-
-                                                                }
-
-                                                                $scope.common = commonFactory                        
-                                                                $scope.requestOptions = jqXHR.requestOptions
-                                                                // сохраняем $scope, чтобы потом обновлять его
-                                                                context.$scope = $scope
-
-
-                                                                // получаем список данных
-                                                                angular.forEach(data.$data, function(value, key){ $scope[key] = value; })
-                                                                // эта функция нам нужна чтобы заносить в кэш шаблоны и использовать
-                                                                // их например для рекурсивной генерации кода (можно скриптом, но касперский блочит)
-                            								$scope.templateCache = function(tid, pattern){ $templateCache.put(tid, newmodal.get().find(pattern).html())  }
-                                                            // сохраняем список всех объектов
-                                                            $scope.objects = objects
-                                                            // сохраняем список всех объектов
-                                                            $scope.modal = newmodal
-
-
-
-                                                        $.each(objects, function(oid, obj){
-
-                                                            obj.$objscope = $scope
-                                                            // сохраняем последний объект как единственный
-                                                            $scope.object = obj
-                                                            $scope.list = obj
-                                                            $scope.request = obj.request
-                                                            // сохраняем последнее контекстное меню как единственное
-                                                            $scope.objects[oid].request = obj.request
-                                                            $scope.objects[oid].getrequest = obj.getrequest
-                                                            $scope.objects[oid].contextmenu = data.$objects[oid].contextmenu
-
-                                                            $scope.eval = function(str){ eval(str) }
-
-                                                            $scope.query = function(url, args){
-
-                                                                $.ajax({
-
-                                                                    url: url.replace(/\[\:([a-z0-9_-]+)\]/g, function(found, val){ return (val in args) ? args[val] : found }),
-                                                                    // передаем протокол в контекст
-                                                                    context: obj
-
-                                                                })
-                                                            }
-
-                                                            /*                            
-                                                                                            $scope.objects[oid].query = (function(object){ 
-
-                                                                                                return function(url, args){
-
-                                                                                                    $.ajax({
-
-                                                                                                        url: url.replace(/\[\:([a-z0-9_-]+)\]/g, function(found, val){ return (val in args) ? args[val] : found }),
-                                                                                                        // передаем протокол в контекст
-                                                                                                        context: object
-
-                                                                                                    })
-                                                                                                }
-
-                                                                                            })(obj)
-
-                                                                                            */
-
-                                                        })
-
-                                                        // обновляем все директивы компилируем код
-                                                    }])).recompile(newmodal.get())
-
-                    // передаем в контекст, что мы загрузились
-                    if(context instanceof FieldClass) context.setObject(newmodal, object)
-
-
-                })
-
-                
-        return returnRes
-        return arguments
-
-
     })    
     
     
-})    
+}));
