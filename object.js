@@ -16,7 +16,7 @@
         factory( jQuery );
     }
 
-}(function(ModalClass, FieldClass, ListClass, FormClass){
+}(function($, ModalClass, FieldClass, ListClass, FormClass){
 
     /**
      *
